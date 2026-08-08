@@ -1,0 +1,21 @@
+en:
+  theme_metadata:
+    description: "Translate custom sidebar section titles and links (external links, plugin entries) by locale."
+  sidebar_translations:
+    name:
+      name: "Rule name"
+      description: "Admin-only label for this row, e.g. Library (zh_CN). Must be unique."
+    match:
+      name: "Match"
+      description: "Original label, data-link-name, or data-section-name. Examples: Library, links, discourse-quiz."
+    match_by:
+      name: "Match by"
+      description: "auto tries link/section name first, then visible text. Use text / link_name / section_name to force a strategy."
+    locale:
+      name: "Locale"
+      description: "Target locale code, e.g. zh_CN or en. Use * to apply for every locale."
+    translation:
+      name: "Translation"
+      description: "Text shown when the interface language matches the locale above."
+  enabled:
+    description: "Enable sidebar custom translations."

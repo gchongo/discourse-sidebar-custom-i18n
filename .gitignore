@@ -1,0 +1,4 @@
+.discourse-site
+.discourse-theme-id
+node_modules/
+.DS_Store

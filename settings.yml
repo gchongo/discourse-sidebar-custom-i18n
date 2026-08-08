@@ -1,0 +1,45 @@
+sidebar_translations:
+  type: objects
+  default: []
+  schema:
+    name: sidebar_translation
+    identifier: name
+    properties:
+      name:
+        type: string
+        required: true
+        validations:
+          min_length: 1
+      match:
+        type: string
+        required: true
+        validations:
+          min_length: 1
+      match_by:
+        type: enum
+        default: auto
+        choices:
+          - auto
+          - text
+          - link_name
+          - section_name
+      locale:
+        type: string
+        required: true
+        validations:
+          min_length: 1
+      translation:
+        type: string
+        required: true
+        validations:
+          min_length: 1
+  description:
+    en: "Custom sidebar translations for section titles and links (including external links and plugin entries). Add one row per locale."
+    zh_CN: "为侧栏分区标题和入口（含外部链接、插件入口）配置自定义翻译。每种语言各加一行。"
+
+enabled:
+  type: bool
+  default: true
+  description:
+    en: "Enable sidebar custom translations."
+    zh_CN: "启用侧栏自定义翻译。"

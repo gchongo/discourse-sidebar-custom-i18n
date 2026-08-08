@@ -1,0 +1,21 @@
+zh_CN:
+  theme_metadata:
+    description: "按界面语言自定义翻译侧栏分区标题与入口（外部链接、插件入口等）。"
+  sidebar_translations:
+    name:
+      name: "规则名称"
+      description: "仅用于后台区分条目，需唯一。例如：Library（中文）。"
+    match:
+      name: "匹配值"
+      description: "原文案、data-link-name 或 data-section-name。例如：Library、links、discourse-quiz。"
+    match_by:
+      name: "匹配方式"
+      description: "auto 优先按链接/分区 name 匹配，再按可见文案。也可强制 text / link_name / section_name。"
+    locale:
+      name: "语言"
+      description: "目标语言代码，如 zh_CN、en。填 * 表示所有语言都应用。"
+    translation:
+      name: "译文"
+      description: "当界面语言匹配上方 locale 时显示的文本。"
+  enabled:
+    description: "启用侧栏自定义翻译。"
