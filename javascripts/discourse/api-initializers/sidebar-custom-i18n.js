@@ -2,6 +2,12 @@ import { schedule } from "@ember/runloop";
 import { apiInitializer } from "discourse/lib/api";
 import I18n from "discourse-i18n";
 import {
+  applyAboutModelOverrides,
+  applyStaticPageOverride,
+  buildPageTranslationIndex,
+  staticPageKeyFromRoute,
+} from "../lib/page-custom-i18n";
+import {
   applySidebarTranslations,
   buildTranslationIndex,
   installSidebarClassPatches,
@@ -13,42 +19,95 @@ export default apiInitializer((api) => {
     return;
   }
 
-  const rules = settings.sidebar_translations;
-  if (!rules?.length) {
+  const sidebarRules = settings.sidebar_translations || [];
+  const pageRules = settings.page_translations || [];
+  const hasSidebar = sidebarRules.length > 0;
+  const hasPages = pageRules.length > 0;
+
+  if (!hasSidebar && !hasPages) {
     return;
   }
 
   let cachedLocale = null;
-  let cachedIndex = null;
+  let cachedSidebarIndex = null;
+  let cachedPageIndex = null;
 
-  const getIndex = () => {
-    const locale = I18n.currentLocale();
-    if (cachedIndex && cachedLocale === locale) {
-      return cachedIndex;
+  const currentLocale = () => I18n.currentLocale();
+
+  const getSidebarIndex = () => {
+    const locale = currentLocale();
+    if (cachedSidebarIndex && cachedLocale === locale) {
+      return cachedSidebarIndex;
     }
 
     cachedLocale = locale;
-    cachedIndex = buildTranslationIndex(rules, locale);
-    return cachedIndex;
+    cachedSidebarIndex = buildTranslationIndex(sidebarRules, locale);
+    cachedPageIndex = buildPageTranslationIndex(pageRules, locale);
+    return cachedSidebarIndex;
   };
 
-  installSidebarClassPatches(getIndex);
+  const getPageIndex = () => {
+    const locale = currentLocale();
+    if (cachedPageIndex && cachedLocale === locale) {
+      return cachedPageIndex;
+    }
 
-  const apply = () => {
-    schedule("afterRender", () => {
-      applySidebarTranslations(document, getIndex());
-    });
+    cachedLocale = locale;
+    cachedSidebarIndex = buildTranslationIndex(sidebarRules, locale);
+    cachedPageIndex = buildPageTranslationIndex(pageRules, locale);
+    return cachedPageIndex;
   };
 
-  api.onPageChange(apply);
+  if (hasSidebar) {
+    installSidebarClassPatches(getSidebarIndex);
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      observeSidebarTranslations(document, getIndex);
-      apply();
+    const applySidebar = () => {
+      schedule("afterRender", () => {
+        applySidebarTranslations(document, getSidebarIndex());
+      });
+    };
+
+    api.onPageChange(applySidebar);
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => {
+        observeSidebarTranslations(document, getSidebarIndex);
+        applySidebar();
+      });
+    } else {
+      observeSidebarTranslations(document, getSidebarIndex);
+      applySidebar();
+    }
+  }
+
+  if (hasPages) {
+    api.modifyClass("route:about", {
+      pluginId: "discourse-custom-i18n",
+      async model() {
+        const about = await this._super(...arguments);
+        return await applyAboutModelOverrides(about, getPageIndex());
+      },
     });
-  } else {
-    observeSidebarTranslations(document, getIndex);
-    apply();
+
+    const patchStaticRoute = (resolverName) => {
+      api.modifyClass(resolverName, {
+        pluginId: "discourse-custom-i18n",
+        async model() {
+          const page = await this._super(...arguments);
+          const pageKey = staticPageKeyFromRoute(
+            resolverName.replace(/^route:/, ""),
+            this.pageId
+          );
+          return await applyStaticPageOverride(page, pageKey, getPageIndex());
+        },
+      });
+    };
+
+    patchStaticRoute("route:faq");
+    patchStaticRoute("route:guidelines");
+    patchStaticRoute("route:rules");
+    patchStaticRoute("route:conduct");
+    patchStaticRoute("route:tos");
+    patchStaticRoute("route:privacy");
   }
 });

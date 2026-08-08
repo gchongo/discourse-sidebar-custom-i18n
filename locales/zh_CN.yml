@@ -1,10 +1,12 @@
 zh_CN:
   theme_metadata:
-    description: "按界面语言自定义翻译侧栏分区标题与入口（外部链接、插件入口等）。"
+    description: "按界面语言覆盖侧栏文案，以及关于页 / FAQ / Guidelines / 服务条款 / 隐私政策正文。"
+  enabled:
+    description: "启用侧栏与页面自定义翻译。"
   sidebar_translations:
     name:
       name: "规则名称"
-      description: "仅用于后台区分条目，需唯一。例如：Library（中文）。"
+      description: "仅用于后台区分条目，需唯一。"
     match:
       name: "匹配值"
       description: "原文案、data-link-name 或 data-section-name。大小写不敏感（填 LINKS 也能匹配 Links）。"
@@ -17,5 +19,19 @@ zh_CN:
     translation:
       name: "译文"
       description: "当界面语言匹配上方 locale 时显示的文本。"
-  enabled:
-    description: "启用侧栏自定义翻译。"
+  page_translations:
+    name:
+      name: "规则名称"
+      description: "仅用于后台区分条目，需唯一。"
+    page:
+      name: "页面"
+      description: "about_short / about_extended 用于关于页；faq、guidelines、tos、privacy 用于对应静态页。"
+    locale:
+      name: "语言"
+      description: "目标语言代码，如 zh_CN、en。填 * 表示所有语言。"
+    html:
+      name: "HTML / 文本"
+      description: "直接覆盖内容。about_short 用纯文本；about_extended 与静态页可用 HTML。若使用 topic_id 可留空。"
+    topic_id:
+      name: "主题 ID"
+      description: "长文推荐。使用该主题首帖的渲染内容。若使用 html 可留空。"

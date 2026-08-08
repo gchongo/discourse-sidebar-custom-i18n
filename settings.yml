@@ -1,3 +1,10 @@
+enabled:
+  type: bool
+  default: true
+  description:
+    en: "Enable custom sidebar and page translations."
+    zh_CN: "启用侧栏与页面自定义翻译。"
+
 sidebar_translations:
   type: objects
   default: []
@@ -34,12 +41,46 @@ sidebar_translations:
         validations:
           min_length: 1
   description:
-    en: "Custom sidebar translations for section titles and links (including external links and plugin entries). Add one row per locale."
-    zh_CN: "为侧栏分区标题和入口（含外部链接、插件入口）配置自定义翻译。每种语言各加一行。"
+    en: "Custom sidebar translations for section titles and links. Add one row per locale."
+    zh_CN: "侧栏分区标题与入口的自定义翻译。每种语言各加一行。"
 
-enabled:
-  type: bool
-  default: true
+page_translations:
+  type: objects
+  default: []
+  schema:
+    name: page_translation
+    identifier: name
+    properties:
+      name:
+        type: string
+        required: true
+        validations:
+          min_length: 1
+      page:
+        type: enum
+        required: true
+        choices:
+          - about_short
+          - about_extended
+          - faq
+          - guidelines
+          - tos
+          - privacy
+      locale:
+        type: string
+        required: true
+        validations:
+          min_length: 1
+      html:
+        type: string
+        required: false
+        validations:
+          max_length: 100000
+      topic_id:
+        type: integer
+        required: false
+        validations:
+          min: 1
   description:
-    en: "Enable sidebar custom translations."
-    zh_CN: "启用侧栏自定义翻译。"
+    en: "Locale-specific content for About / FAQ / Guidelines / TOS / Privacy. Prefer topic_id for long pages; use html for short text or pasted HTML."
+    zh_CN: "关于页、FAQ、Guidelines、服务条款、隐私政策的按语言正文。长文建议填 topic_id；短文或粘贴 HTML 用 html。"

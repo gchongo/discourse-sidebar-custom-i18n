@@ -1,9 +1,9 @@
 {
-  "name": "Sidebar Custom i18n",
+  "name": "Custom i18n",
   "component": true,
   "authors": "Community",
   "about_url": null,
   "license_url": null,
-  "theme_version": "1.0.0",
+  "theme_version": "1.1.0",
   "learn_more": "https://meta.discourse.org/t/beginners-guide-to-using-discourse-themes/91966"
 }

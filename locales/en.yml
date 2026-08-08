@@ -1,10 +1,12 @@
 en:
   theme_metadata:
-    description: "Translate custom sidebar section titles and links (external links, plugin entries) by locale."
+    description: "Override sidebar labels and About / FAQ / Guidelines / TOS / Privacy page content by locale."
+  enabled:
+    description: "Enable custom sidebar and page translations."
   sidebar_translations:
     name:
       name: "Rule name"
-      description: "Admin-only label for this row, e.g. Library (zh_CN). Must be unique."
+      description: "Admin-only label for this row. Must be unique."
     match:
       name: "Match"
       description: "Original label, data-link-name, or data-section-name. Matching is case-insensitive (LINKS matches Links)."
@@ -17,5 +19,19 @@ en:
     translation:
       name: "Translation"
       description: "Text shown when the interface language matches the locale above."
-  enabled:
-    description: "Enable sidebar custom translations."
+  page_translations:
+    name:
+      name: "Rule name"
+      description: "Admin-only label for this row. Must be unique."
+    page:
+      name: "Page"
+      description: "about_short / about_extended for the About page; faq, guidelines, tos, privacy for static pages."
+    locale:
+      name: "Locale"
+      description: "Target locale code, e.g. zh_CN or en. Use * for every locale."
+    html:
+      name: "HTML / text"
+      description: "Inline override. Use plain text for about_short; HTML for about_extended and static pages. Leave empty when using topic_id."
+    topic_id:
+      name: "Topic ID"
+      description: "Preferred for long pages. Uses the cooked first post of that topic. Leave empty when using html."
