@@ -1,3 +1,5 @@
+import Section from "discourse/lib/sidebar/section";
+
 const ORIGINAL_ATTR = "data-sidebar-i18n-original";
 const APPLIED_ATTR = "data-sidebar-i18n-applied";
 const TITLE_ORIGINAL_ATTR = "data-sidebar-i18n-title-original";
@@ -9,6 +11,21 @@ function normalizeLocale(locale) {
     .trim()
     .replace(/-/g, "_")
     .toLowerCase();
+}
+
+function normalizeKey(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .replace(/[\u00a0\u2000-\u200b\u202f\u205f\u3000]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function parameterizeKey(value) {
+  return normalizeKey(value)
+    .replace(/[^a-z0-9\u4e00-\u9fff]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function localeScore(ruleLocale, currentLocale) {
@@ -37,6 +54,34 @@ function normalizeMatchBy(matchBy) {
     return value;
   }
   return "auto";
+}
+
+function setNormalized(map, key, translation) {
+  const normalized = normalizeKey(key);
+  if (!normalized) {
+    return;
+  }
+  map.set(normalized, translation);
+
+  const parameterized = parameterizeKey(key);
+  if (parameterized && parameterized !== normalized) {
+    map.set(parameterized, translation);
+  }
+}
+
+function lookupNormalized(map, ...candidates) {
+  for (const candidate of candidates) {
+    const normalized = normalizeKey(candidate);
+    if (normalized && map.has(normalized)) {
+      return map.get(normalized);
+    }
+
+    const parameterized = parameterizeKey(candidate);
+    if (parameterized && map.has(parameterized)) {
+      return map.get(parameterized);
+    }
+  }
+  return null;
 }
 
 /**
@@ -73,17 +118,18 @@ export function buildTranslationIndex(rules, currentLocale) {
   ranked.sort((a, b) => a.score - b.score);
 
   for (const rule of ranked) {
-    const key = rule.match;
-    const { matchBy, translation } = rule;
+    const { match, matchBy, translation } = rule;
 
     if (matchBy === "auto" || matchBy === "link_name") {
-      byLinkName.set(key, translation);
+      setNormalized(byLinkName, match, translation);
     }
     if (matchBy === "auto" || matchBy === "section_name") {
-      bySectionName.set(key, translation);
+      setNormalized(bySectionName, match, translation);
     }
     if (matchBy === "auto" || matchBy === "text") {
-      byText.set(key, translation);
+      setNormalized(byText, match, translation);
+      // Section headers are CSS-uppercased; allow text rules to hit slug/name too.
+      setNormalized(bySectionName, match, translation);
     }
   }
 
@@ -110,40 +156,52 @@ function setTextContent(el, text) {
 
 function resolveLinkTranslation(link, textEl, index) {
   const linkName = link.getAttribute("data-link-name");
-  if (linkName && index.byLinkName.has(linkName)) {
-    return index.byLinkName.get(linkName);
+  const listItemName = link
+    .closest("[data-list-item-name]")
+    ?.getAttribute("data-list-item-name");
+
+  const byName = lookupNormalized(index.byLinkName, linkName, listItemName);
+  if (byName) {
+    return byName;
   }
 
   const original = rememberOriginal(textEl);
-  if (original && index.byText.has(original)) {
-    return index.byText.get(original);
-  }
-
   const current = textEl.textContent.trim();
-  if (current && index.byText.has(current)) {
-    return index.byText.get(current);
-  }
-
-  return null;
+  return lookupNormalized(index.byText, original, current);
 }
 
 function resolveSectionTranslation(section, textEl, index) {
   const sectionName = section.getAttribute("data-section-name");
-  if (sectionName && index.bySectionName.has(sectionName)) {
-    return index.bySectionName.get(sectionName);
+  const byName = lookupNormalized(index.bySectionName, sectionName);
+  if (byName) {
+    return byName;
   }
 
   const original = rememberOriginal(textEl);
-  if (original && index.byText.has(original)) {
-    return index.byText.get(original);
-  }
-
   const current = textEl.textContent.trim();
-  if (current && index.byText.has(current)) {
-    return index.byText.get(current);
+  return lookupNormalized(index.byText, original, current, sectionName);
+}
+
+export function resolveSectionTitle(index, slug, title) {
+  if (!index) {
+    return null;
   }
 
-  return null;
+  return (
+    lookupNormalized(index.bySectionName, slug, title) ||
+    lookupNormalized(index.byText, title, slug)
+  );
+}
+
+export function resolveLinkText(index, name, text) {
+  if (!index) {
+    return null;
+  }
+
+  return (
+    lookupNormalized(index.byLinkName, name) ||
+    lookupNormalized(index.byText, text, name)
+  );
 }
 
 function translateLinkTitle(link, translation, index) {
@@ -159,8 +217,7 @@ function translateLinkTitle(link, translation, index) {
   const originalTitle = link.getAttribute(TITLE_ORIGINAL_ATTR);
   const shouldReplace =
     originalTitle === currentTitle ||
-    index.byText.has(originalTitle) ||
-    index.byText.has(currentTitle) ||
+    lookupNormalized(index.byText, originalTitle, currentTitle) ||
     currentTitle === translation;
 
   if (shouldReplace && currentTitle !== translation) {
@@ -217,6 +274,79 @@ export function applySidebarTranslations(doc, index) {
       applySections(root, index);
       applyLinks(root, index);
     });
+  }
+}
+
+function wrapSectionLink(link, getIndex) {
+  if (!link || link.__sidebarCustomI18nWrapped) {
+    return link;
+  }
+
+  const originalText = link.text;
+  let storedText = originalText;
+
+  Object.defineProperty(link, "text", {
+    configurable: true,
+    enumerable: true,
+    get() {
+      return (
+        resolveLinkText(getIndex(), link.name, storedText) ?? storedText
+      );
+    },
+    set(value) {
+      storedText = value;
+    },
+  });
+
+  link.__sidebarCustomI18nWrapped = true;
+  return link;
+}
+
+export function installSidebarClassPatches(getIndex) {
+  if (!Section.prototype.__sidebarCustomI18nTitlePatched) {
+    const descriptor = Object.getOwnPropertyDescriptor(
+      Section.prototype,
+      "decoratedTitle"
+    );
+
+    if (descriptor?.get) {
+      Object.defineProperty(Section.prototype, "decoratedTitle", {
+        configurable: true,
+        enumerable: descriptor.enumerable,
+        get() {
+          const original = descriptor.get.call(this);
+          return (
+            resolveSectionTitle(getIndex(), this.slug, original) ?? original
+          );
+        },
+      });
+      Section.prototype.__sidebarCustomI18nTitlePatched = true;
+    }
+  }
+
+  if (!Section.prototype.__sidebarCustomI18nLinksPatched) {
+    const linksDescriptor = Object.getOwnPropertyDescriptor(
+      Section.prototype,
+      "links"
+    );
+
+    // @autoTrackedArray installs get/set; wrap setter so custom links get translated text.
+    if (linksDescriptor?.set && linksDescriptor?.get) {
+      Object.defineProperty(Section.prototype, "links", {
+        configurable: true,
+        enumerable: linksDescriptor.enumerable,
+        get() {
+          return linksDescriptor.get.call(this);
+        },
+        set(value) {
+          const wrapped = Array.isArray(value)
+            ? value.map((link) => wrapSectionLink(link, getIndex))
+            : value;
+          linksDescriptor.set.call(this, wrapped);
+        },
+      });
+      Section.prototype.__sidebarCustomI18nLinksPatched = true;
+    }
   }
 }
 

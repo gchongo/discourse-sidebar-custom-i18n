@@ -1,8 +1,10 @@
+import { schedule } from "@ember/runloop";
 import { apiInitializer } from "discourse/lib/api";
 import I18n from "discourse-i18n";
 import {
   applySidebarTranslations,
   buildTranslationIndex,
+  installSidebarClassPatches,
   observeSidebarTranslations,
 } from "../lib/sidebar-custom-i18n";
 
@@ -30,7 +32,13 @@ export default apiInitializer((api) => {
     return cachedIndex;
   };
 
-  const apply = () => applySidebarTranslations(document, getIndex());
+  installSidebarClassPatches(getIndex);
+
+  const apply = () => {
+    schedule("afterRender", () => {
+      applySidebarTranslations(document, getIndex());
+    });
+  };
 
   api.onPageChange(apply);
 

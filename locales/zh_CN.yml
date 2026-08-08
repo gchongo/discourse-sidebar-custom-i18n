@@ -7,7 +7,7 @@ zh_CN:
       description: "仅用于后台区分条目，需唯一。例如：Library（中文）。"
     match:
       name: "匹配值"
-      description: "原文案、data-link-name 或 data-section-name。例如：Library、links、discourse-quiz。"
+      description: "原文案、data-link-name 或 data-section-name。大小写不敏感（填 LINKS 也能匹配 Links）。"
     match_by:
       name: "匹配方式"
       description: "auto 优先按链接/分区 name 匹配，再按可见文案。也可强制 text / link_name / section_name。"

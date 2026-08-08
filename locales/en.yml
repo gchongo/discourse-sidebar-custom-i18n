@@ -7,7 +7,7 @@ en:
       description: "Admin-only label for this row, e.g. Library (zh_CN). Must be unique."
     match:
       name: "Match"
-      description: "Original label, data-link-name, or data-section-name. Examples: Library, links, discourse-quiz."
+      description: "Original label, data-link-name, or data-section-name. Matching is case-insensitive (LINKS matches Links)."
     match_by:
       name: "Match by"
       description: "auto tries link/section name first, then visible text. Use text / link_name / section_name to force a strategy."

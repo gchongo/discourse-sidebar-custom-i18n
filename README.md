@@ -19,7 +19,9 @@ A Discourse theme component that lets admins override sidebar labels by locale â
 | **Locale** | Target locale such as `zh_CN` or `en` (`*` = every locale) |
 | **Translation** | Text to show when the interface language matches **Locale** |
 
-**Match** is always the *source* string currently shown in the sidebar. Add one row per locale when you need different labels for Chinese and English.
+**Match** is the sidebar source string (visible label, `data-link-name`, or `data-section-name`). Matching is case-insensitive and ignores extra spaces, so `LINKS` matches a section whose real title is `Links` (Discourse uppercases section headers with CSS).
+
+Add one row per locale when you need different labels for Chinese and English.
 
 ### Finding Match values
 
